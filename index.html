@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Three.js Room</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel=stylesheet href="css/base.css"/>
+</head>
+
+<body style="background:white">
+<script src="http://code.createjs.com/createjs-2015.05.21.min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/three.js/r74/three.min.js"></script>
+<script src="js/OrbitControls.js"></script>
+<div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
+<script>
+
+window.addEventListener('load', init);
+var mouse = new THREE.Vector2(),INTERSECTED;
+var raycaster = new THREE.Raycaster();
+
+
+function init(){
+	var scene= new THREE.Scene();
+	camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 400000 );
+	scene.add(camera);
+	camera.position.set(550,10,10);
+	camera.lookAt(scene.position);	
+
+	renderer = new THREE.WebGLRenderer();
+	container = document.getElementById('ThreeJS');
+	container.appendChild(renderer.domElement);
+	renderer.setSize( window.innerWidth, window.innerHeight );
+
+// control
+	controls = new THREE.OrbitControls(camera,renderer.domElement);
+	controls.addEventListener('change',render);
+	function render(){
+		renderer.render(scene,camera)
+	};
+
+// light
+	// var light = new THREE.PointLight(0xff0000,1,30);
+	// light.position.set(100,550,100);
+	// light.castShadow = true;
+	// light.shadowCameraNear = 1;
+	// light.shadowCameraFar = 30;
+	// // light.shadowCameraVisible = true;
+	// light.shadowBias = 0.01;
+	// scene.add(light);
+
+// fog
+	scene.fog = new THREE.FogExp2( "pink", 0.00105 );
+
+
+// creat geometry
+	var verticesOfCube = [
+	    -1,-1,-1,    1,-1,-1,    1, 1,-1,    -1, 1,-1,
+	    -1,-1, 1,    1,-1, 1,    1, 1, 1,    -1, 1, 1,
+	];
+	var indicesOfFaces = [
+	    2,1,0,    0,3,2,
+	    0,4,7,    7,3,0,
+	    0,1,5,    5,4,0,
+	    1,2,6,    6,5,1,
+	    2,3,7,    7,6,2,
+	    4,5,6,    6,7,4
+	];
+	var loader = new THREE.TextureLoader();
+	var moonTexture = new loader.load('images/back4.jpg');		
+	var geometry = new THREE.PolyhedronGeometry(verticesOfCube, indicesOfFaces,50,1);	
+	var material = new THREE.MeshBasicMaterial({
+		map: moonTexture,
+		color:"white",
+		// wireframe:true
+	});
+	var	particleSystem = new THREE.Mesh(geometry, material);
+	// var helper = new THREE.BoxHelper(particleSystem);
+	scene.add(particleSystem);
+
+// create geometry2
+	// var loader = new THREE.TextureLoader();
+	var floorTexture = new loader.load('images/snow.png');	
+	var geometry2 = new THREE.Geometry();
+	var material2 = new THREE.PointsMaterial({size:9,
+		map:floorTexture,
+		opacity : .8,
+		transparent: true,
+		sizeAttenuation: false});
+	var particleSystem2 = new THREE.Points(geometry2, material2);
+	scene.add(particleSystem2);
+	var pc = 2000;
+	for(var i=0; i<pc; i++){
+		var p = new THREE.Vector3(
+		Math.random()*pc-pc/2,
+		Math.random()*pc-pc/2,
+		Math.random()*pc-pc/2
+		);
+		geometry2.vertices.push(p);
+		// geometry.vertices.push(p);
+	}
+	particleSystem2.position.y +=500;
+
+// create geometry3
+	var geometry3 = new THREE.BoxGeometry( 120, 120, 120 );
+	var material3 = new THREE.MeshBasicMaterial({
+		color:"salmon",
+		wireframe:true
+	});
+	var	particleSystem3 = new THREE.Mesh(geometry3, material3);
+	scene.add(particleSystem3);
+
+// create bottom box
+	var geometry4 = new THREE.BoxGeometry(1500,20,1500,15,1,15);
+	var material4 = new THREE.MeshBasicMaterial({
+		color:"cornflowerblue",
+		// wireframe:true
+	});
+	var material8 = new THREE.MeshLambertMaterial({
+		color:"cornflowerblue",
+		// wireframe:true
+	});
+	var	particleSystem4 = new THREE.Mesh(geometry4, material4);
+	particleSystem4.position.y -=100;
+	scene.add(particleSystem4);
+	for(var i=0; i<geometry4.vertices.length; i++){
+		if(geometry4.vertices[i].y> -100 && Math.random()>0.9)
+			geometry4.vertices[i].y = Math.floor(Math.random()*180);
+	}
+	// for( c in geometry4.faces){
+	// 	var face = geometry4.faces[c];
+	// 		face.vertexColors[0] = new THREE.Color(0xFF0000);
+	// 		face.vertexColors[1] = new THREE.Color(0x00FF00);
+	// 		face.vertexColors[2] = new THREE.Color(0x0000FF);
+	// }
+	// geometry4.computeBoundingSphere();
+
+
+
+// plane
+	geometry5 = new THREE.Geometry();
+	for ( i = 0; i < 20; i ++ ) {
+
+		var vertex = new THREE.Vector3();
+		vertex.x = Math.random() * 2000 - 1000;
+		vertex.y = Math.random() * 2000 - 1000;
+		vertex.z = Math.random() * 2000 - 1000;
+
+		geometry5.vertices.push( vertex );
+	};
+	var parameters = [
+		[ [1, 1, 0.5], 5 ],
+		[ [0.95, 1, 0.5], 4 ],
+		[ [0.90, 1, 0.5], 3 ],
+		[ [0.85, 1, 0.5], 2 ],
+		[ [0.80, 1, 0.5], 1 ]
+	];
+	for ( a = 0; a < parameters.length; a ++ ) {
+		// var color = parameters[a][0];
+		// var s  = parameters[a][1];
+		var materials5 = new THREE.PointsMaterial({ 
+			size: parameters[a][1]*10,
+			map:floorTexture,
+			opacity : .8,
+			transparent: true,
+			sizeAttenuation: false,
+			wireframe:true
+		});
+		var particles = new THREE.Points( geometry5, materials5 );
+
+		particles.rotation.x = Math.random() * 6;
+		particles.rotation.y = Math.random() * 6;	
+		particles.rotation.z = Math.random() * 6;
+		scene.add( particles );
+	};
+
+// background
+	// var cubeMaterialArray = [];
+	// var starTexture = new loader.load('images/Polygon.jpg');
+	// // var marsTexture = new loader.load('images/back5.jpg');
+	// // var moonTexture = new loader.load('images/back4.jpg');
+	// cubeMaterialArray.push( new THREE.MeshBasicMaterial( {map: starTexture, side: THREE.BackSide } ) );
+	// cubeMaterialArray.push( new THREE.MeshBasicMaterial( {map: starTexture, side: THREE.BackSide } ) );
+	// cubeMaterialArray.push( new THREE.MeshBasicMaterial( {map: starTexture, side: THREE.BackSide } ) );
+	// cubeMaterialArray.push( new THREE.MeshBasicMaterial( {map: starTexture, side: THREE.BackSide } ) );
+	// cubeMaterialArray.push( new THREE.MeshBasicMaterial( {map: starTexture, side: THREE.BackSide } ) );
+	// cubeMaterialArray.push( new THREE.MeshBasicMaterial( {map: starTexture, side: THREE.BackSide } ) );
+	// var cubeMaterials = new THREE.MeshFaceMaterial(cubeMaterialArray);
+	// var skyBoxGeometry = new THREE.BoxGeometry(1500, 1500/2, 1500);
+	// skyBox = new THREE.Mesh(skyBoxGeometry, cubeMaterials);
+	// scene.add(skyBox);
+	// skyBox.position.y +=200;
+
+
+// render
+	var size = 200;
+	var render = function () {
+					requestAnimationFrame( render );
+					// draw(geometry2,size);
+					animation();
+					// controls.update();
+					renderer.render(scene, camera);
+				
+	};
+	render();
+	window.requestAnimationFrame(render);
+
+// mouse event
+	function onDocumentMouseMove( draw ) {
+
+		draw.preventDefault();
+		mouse.x = ( draw.clientX / window.innerWidth ) * 2 - 1;
+		mouse.y = - ( draw.clientY / window.innerHeight ) * 2 + 1;
+		// find intersections
+		raycaster.setFromCamera( mouse, camera );
+		var intersects = raycaster.intersectObjects( particleSystem2);		
+		console.log('mousemove');
+	}
+	window.addEventListener( 'mousemove', draw, false );
+
+	
+// animation
+	function draw(){
+		var speed = 10;
+		var size = 1;
+		var snow = geometry2;
+		// var snow2 = geometry3;
+		for (var i=0; i<snow.vertices.length; i++){
+			
+			// snow.vertices[i].y -=Math.random()*(size/1000);
+			// snow.vertices[i].x -=Math.random()*(size/1000);
+			// snow.vertices[i].z -=Math.random()*(size/1000);
+			snow.vertices[i].y -= Math.random()*speed;
+			if(snow.vertices[i].y < -500){
+				snow.vertices[i].y +=Math.random()*speed;
+			}
+			// else if(snow.vertices[i].y > -600){
+			// 	snow.vertices[i].y -=1;
+			// }else{
+			// 	snow.vertices[i].y += Math.random()*speed;
+			// }
+			snow.vertices[i].y -= Math.max(size / -2, Math.min(size / 2, snow.vertices[i].y + Math.random() * speed * 2 - speed));
+			snow.vertices[i].x -= Math.max(size / -2, Math.min(size / 2, snow.vertices[i].x + Math.random() * speed * 2 - speed));
+			snow.vertices[i].z -= Math.max(size / -2, Math.min(size / 2, snow.vertices[i].z + Math.random() * speed * 2 - speed));
+		}
+		snow.verticesNeedUpdate = true;
+				
+	}
+	function animation(){		
+		particleSystem.rotation.x -= 0.015;
+		particleSystem.rotation.z += 0.0015;
+		particleSystem3.rotation.y += 0.015;
+		particleSystem3.rotation.z -= 0.0015;
+
+	}
+
+}
+
+
+	
+</script>
+</body>
+</html>
